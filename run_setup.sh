@@ -6,7 +6,14 @@
 
 set -euo pipefail   # exit on error, unset vars, or failed pipes
 
-ANACONDA_VER="Anaconda3-2024.06-1-Linux-x86_64.sh"
+# Fetch the latest Anaconda installer name from the archive
+echo "Fetching the latest Anaconda installer from https://repo.anaconda.com/archive/ ..."
+ANACONDA_VER=$(curl -s https://repo.anaconda.com/archive/ | grep -Eo 'Anaconda3-[0-9]{4}\.[0-9]{2}-1-Linux-x86_64.sh' | sort -V | tail -n 1)
+if [ -z "$ANACONDA_VER" ]; then
+    echo "Error: Could not determine the latest Anaconda installer version."
+    exit 1
+fi
+echo "Latest Anaconda installer: ${ANACONDA_VER}"
 
 # ---------------------
 # System Update & Package Installation
