@@ -3,3 +3,10 @@ __pycache__
 Models/
 
 wandb/
+
+# Ignore these directories
+cache/
+wav_data/
+
+# Ignore the CSV files
+*.csv
