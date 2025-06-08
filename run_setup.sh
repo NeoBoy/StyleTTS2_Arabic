@@ -79,8 +79,9 @@ else
     # Reset all local changes
     git reset --hard HEAD
 
-    # Pull latest updates forcefully, overwriting local changes
-    git pull --force origin main
+    # Fetch latest updates and force local branch to match remote
+    git fetch origin
+    git reset --hard origin/main
 fi
 
 
