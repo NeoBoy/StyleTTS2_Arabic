@@ -33,20 +33,23 @@ import os
 import argparse
 import pandas as pd
 
-def write_list_file(data: pd.DataFrame, root_path: str, output_file: str, text_field: str):
-    """Write the list file where each line is: relative_audio_filename|transcript."""
+def write_list_file(data: pd.DataFrame, output_file: str, text_field: str):
+    """Write the list file in the format: file_name|phonetic_text|speakerID."""
     out_dir = os.path.dirname(output_file)
     if out_dir and not os.path.exists(out_dir):
         os.makedirs(out_dir, exist_ok=True)
 
     with open(output_file, "w", encoding="utf-8") as f:
         for _, row in data.iterrows():
-            file_name = row.get("file_name", "")
-            if not file_name:
-                continue
+            file_name = row.get("file_name", "").strip()
+            phonetic_text = str(row.get(text_field, "")).strip()
+            gender = row.get("gender", "").strip().lower()
 
-            transcript = str(row.get(text_field, "")).strip()
-            f.write(f"{file_name}|{transcript}\n")
+            # Assign speakerID based on gender (0 for female, 1 for male)
+            speaker_id = "0" if gender == "female" else "1"
+
+            f.write(f"{file_name}|{phonetic_text}|{speaker_id}\n")
+    
     print(f"Wrote {len(data)} entries to {output_file}.")
 
 def select_per_gender(df: pd.DataFrame, target_duration: float, order: str) -> pd.DataFrame:
