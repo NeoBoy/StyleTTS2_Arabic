@@ -27,7 +27,7 @@ apt-get install -y vim less espeak-ng wget curl git
 # ---------------------
 # Download and Install Latest Anaconda
 # ---------------------
-# ...existing code...
+
 
 if [ -d "$HOME/anaconda3" ]; then
     echo "Anaconda is already installed at $HOME/anaconda3. Skipping installation..."
@@ -42,13 +42,14 @@ else
 
     echo "Installing Anaconda to $HOME/anaconda3..."
     bash "${ANACONDA_VER}" -b -p "$HOME/anaconda3"
-    source "$HOME/anaconda3/etc/profile.d/conda.sh"
-    echo "source \$HOME/anaconda3/etc/profile.d/conda.sh" >> ~/.bashrc
-
-    echo "Updating conda to the latest version..."
-    conda update -n base -c defaults conda -y
+    echo "Anaconda installation complete."
 fi
 
+source "$HOME/anaconda3/etc/profile.d/conda.sh"
+echo "source \$HOME/anaconda3/etc/profile.d/conda.sh" >> ~/.bashrc
+
+echo "Updating conda to the latest version..."
+conda update -n base -c defaults conda -y
 
 
 # ---------------------
