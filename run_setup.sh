@@ -80,7 +80,11 @@ if [ -d "$HOME/anaconda3" ]; then
     echo "Anaconda is already installed at $HOME/anaconda3. Skipping installation..."
 else
     echo "Downloading Anaconda installer: ${ANACONDA_VER}"
-    wget https://repo.anaconda.com/archive/${ANACONDA_VER}
+    if [ -f "${ANACONDA_VER}" ]; then
+        echo "Installer ${ANACONDA_VER} already exists. Skipping download."
+    else
+        wget https://repo.anaconda.com/archive/${ANACONDA_VER}
+    fi
     chmod +x "${ANACONDA_VER}"
 
     echo "Installing Anaconda to $HOME/anaconda3..."
