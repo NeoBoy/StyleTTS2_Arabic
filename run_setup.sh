@@ -54,17 +54,23 @@ OUTPUT_DIR="wav_data"                    # Directory where audio files will be s
 META_CSV="dataset_metadata.csv"          # CSV file to store metadata
 
 # ---------------------
-# Clone or Update Repository
+# Clone or Force Reset Repository
 # ---------------------
 if [ ! -d "$REPO_DIR" ]; then
     echo "Cloning repository from $REPO_URL..."
     git clone "$REPO_URL"
-    cd "$REPO_DIR"
 else
-    echo "Repository folder exists. Fetching the latest commit..."
+    echo "Repository folder exists. Discarding local changes before updating..."
     cd "$REPO_DIR"
-    git pull origin main
+
+    # Reset all local changes
+    git reset --hard HEAD
+
+    # Pull latest updates forcefully, overwriting local changes
+    git pull --force origin main
 fi
+
+cd "$REPO_DIR"
 
 
 # ---------------------
