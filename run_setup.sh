@@ -74,19 +74,35 @@ cd "$REPO_DIR"
 
 
 # ---------------------
-# Conda Environment Setup
+# Download and Install Latest Anaconda
 # ---------------------
-echo "Creating the conda environment using $ENV_YML..."
-conda env create -f "$ENV_YML" || echo "Conda environment may already exist."
-ENV_NAME=$(grep "^name:" "$ENV_YML" | awk '{print $2}')
-if [ -z "$ENV_NAME" ]; then
-    echo "Error: Unable to determine environment name from $ENV_YML"
-    exit 1
+if [ -d "$HOME/anaconda3" ]; then
+    echo "Anaconda is already installed at $HOME/anaconda3. Skipping installation..."
+else
+    echo "Downloading Anaconda installer: ${ANACONDA_VER}"
+    wget https://repo.anaconda.com/archive/${ANACONDA_VER}
+    chmod +x "${ANACONDA_VER}"
+
+    echo "Installing Anaconda to $HOME/anaconda3..."
+    bash "${ANACONDA_VER}" -b -p "$HOME/anaconda3"
+    source "$HOME/anaconda3/etc/profile.d/conda.sh"
+    echo "source \$HOME/anaconda3/etc/profile.d/conda.sh" >> ~/.bashrc
+
+    echo "Updating conda to the latest version..."
+    conda update -n base -c defaults conda -y
 fi
 echo "Environment created: $ENV_NAME"
 
 echo "Activating conda environment: $ENV_NAME"
 conda activate "$ENV_NAME"
+
+# ---------------------
+# Upgrade Pip & Reinstall Dependencies
+# ---------------------
+echo "Upgrading pip and reinstalling all dependencies..."
+pip install --upgrade pip
+pip install --upgrade --force-reinstall -r requirements.txt
+
 
 # ---------------------
 # Execute the Python Script
