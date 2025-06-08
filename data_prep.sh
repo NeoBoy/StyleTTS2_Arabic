@@ -21,8 +21,19 @@ VAL_LIST="Data/val_list.txt"
 TEXT_FIELD="phonetic_text"
 
 # OPTIONAL: Duration-based filtering for the training set
-TARGET_DURATION=${TARGET_DURATION:-""}  # If empty, full dataset will be used
-DURATION_ORDER=${DURATION_ORDER:-"random"}  # Default ordering method
+"""For TARGET_DURATION, the default value is set to "3600", which represents a target total duration of 3600 
+seconds (or 1 hour) for each gender in the dataset. This means that, unless the variable is set elsewhere, 
+the script will aim to select audio samples totaling 1 hour for both male and female data. 
+If TARGET_DURATION is left empty, the script will use the entire dataset without limiting the duration.
+
+For DURATION_ORDER, the default is "random". This variable controls the method used to order or select audio 
+samples when assembling the dataset. The value can be "random" (select samples in a random order), 
+"min" (prioritize shorter samples first), or "max" (prioritize longer samples first). 
+This allows for flexible control over how the dataset is constructed, depending on the desired characteristics 
+for training or evaluation
+"""
+TARGET_DURATION=${TARGET_DURATION:-"3600"}  # 3600 means 1 hr each for both genders, If empty, full dataset will be used
+DURATION_ORDER=${DURATION_ORDER:-"random"}  # Default ordering method, can be "random", "min", or "max"
 
 # Prepare arguments for generate_TTS2_lists.py
 args=( --metadata_csv "$META_CSV"
