@@ -116,7 +116,7 @@ def main():
     df = pd.read_csv(args.metadata_csv)
 
     # Validate required columns exist
-    for col in ["file_name", "split", args.text_field, "gender"]:
+    for col in ["file_name", "split", args.text_field, "gender", "duration"]:
         if col not in df.columns:
             print(f"Error: Required column '{col}' not found in metadata.")
             exit(1)
@@ -129,12 +129,14 @@ def main():
 
     # Apply gender-balanced selection **only for training set**, if requested
     if args.target_duration is not None:
-        if "duration" in df_train.columns:
-            print(f"Applying gender-balanced selection for training set: {args.target_duration} sec per gender, sorted by '{args.duration_order}'.")
-            df_train = select_per_gender(df_train, args.target_duration, args.duration_order)
-            print(f"After filtering, training entries: {len(df_train)}")
-        else:
-            print("Skipping duration filtering for training set (missing 'duration' column).")
+        print(f"Applying gender-balanced selection for training set: {args.target_duration} sec per gender, sorted by '{args.duration_order}'.")
+        df_train = select_per_gender(df_train, args.target_duration, args.duration_order)
+        print(f"After filtering, training entries: {len(df_train)}")
+
+        # Save filtered metadata for verification
+        filtered_train_csv = "filtered_train_metadata.csv"
+        df_train.to_csv(filtered_train_csv, index=False)
+        print(f"Saved filtered training metadata to {filtered_train_csv}")
 
     # Write the training and validation list files
     write_list_file(df_train, args.train_list, args.text_field)

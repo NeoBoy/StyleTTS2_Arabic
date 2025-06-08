@@ -21,16 +21,10 @@ VAL_LIST="Data/val_list.txt"
 TEXT_FIELD="phonetic_text"
 
 # OPTIONAL: Duration-based filtering for the training set
-TARGET_DURATION=3600  # Per gender (e.g., 3600 sec = 1 hour per male, 1 hour per female)
-DURATION_ORDER="random" # Options: random, min (ascending by duration), max (descending by duration)
+TARGET_DURATION=${TARGET_DURATION:-""}  # If empty, full dataset will be used
+DURATION_ORDER=${DURATION_ORDER:-"random"}  # Default ordering method
 
-# Validate metadata existence
-if [ ! -f "$META_CSV" ]; then
-    echo "Error: Metadata file '$META_CSV' not found! Ensure that dataset processing is complete."
-    exit 1
-fi
-
-# Prepare the arguments array for generate_TTS2_lists.py
+# Prepare arguments for generate_TTS2_lists.py
 args=( --metadata_csv "$META_CSV"
        --train_split "$TRAIN_SPLIT"
        --val_split "$VAL_SPLIT"
@@ -38,11 +32,12 @@ args=( --metadata_csv "$META_CSV"
        --val_list "$VAL_LIST"
        --text_field "$TEXT_FIELD" )
 
-# Add duration filtering only if TARGET_DURATION is set
+# Add duration filtering **ONLY** if TARGET_DURATION is set
 if [ -n "$TARGET_DURATION" ]; then
+    echo "Using target duration: $TARGET_DURATION sec per gender with sorting order: $DURATION_ORDER."
     args+=( --target_duration "$TARGET_DURATION" --duration_order "$DURATION_ORDER" )
 else
-    echo "Using the full training dataset (no duration filtering)."
+    echo "No target duration provided—using the full dataset. Default sorting order: $DURATION_ORDER."
 fi
 
 echo "Generating list files for StyleTTS2..."
