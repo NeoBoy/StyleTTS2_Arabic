@@ -39,6 +39,16 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Train the model")
+    parser.add_argument("--config_path", type=str, required=True, help="Path to config file")
+    # Add the run_name argument
+    parser.add_argument("--run_name", type=str, default="default_run", 
+                        help="Name for the wandb project run")
+    return vars(parser.parse_args())  # Convert Namespace to a dictionary
+
+
+
 def load_pretrained_models(config):
     """
     Load all pretrained models required for training.
@@ -506,6 +516,7 @@ def save_checkpoint(model, optimizer, epoch, iters, loss_test, best_loss, log_di
 # @click.command()
 # @click.option('-p', '--config_path', default='Configs/config_ft.yml', type=str)
 def main(args = None):
+    args = parse_args()  # Ensure that args gets assigned here
     assert args is not None, "args must be provided"
     config_path = args['config_path']
     config = yaml.safe_load(open(config_path))

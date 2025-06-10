@@ -80,7 +80,13 @@ class FilePathDataset(torch.utils.data.Dataset):
         else:
             speaker_id = 0  # default or unknown
 
-        wave = np.array(sample['audio'][0])
+        # wave = np.array(sample['audio'][0])
+        audio_info = sample['audio']
+        if isinstance(audio_info, dict) and 'array' in audio_info:
+          wave = np.array(audio_info['array'])
+        else:
+          # Fallback: if it is already a list or something else, try to access index 0
+          wave = np.array(audio_info[0])
         wave = np.concatenate([np.zeros([5000]), wave, np.zeros([5000])], axis=0)
 
         char_idx = self.char_indexer(text)
