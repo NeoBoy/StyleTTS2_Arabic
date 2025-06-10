@@ -540,7 +540,8 @@ def main(args = None):
     device = accelerator.device
 
     from datasets import load_dataset
-    dataset = load_dataset("fadi77/arabic-audiobook-dataset-24khz", split="train")
+    # dataset = load_dataset("fadi77/arabic-audiobook-dataset-24khz", split="train")
+    dataset = load_dataset("NeoBoy/arabic-tts-wav-24k", split="train")
 
     # Split the dataset into train and validation sets (95% train, 5% validation)
     train_test_split = dataset.train_test_split(test_size=0.05, seed=42)

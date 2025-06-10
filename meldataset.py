@@ -68,8 +68,11 @@ class FilePathDataset(torch.utils.data.Dataset):
         return speaker_id, acoustic_feature, text_tensor, bert_text_tensor, ref_mel_tensor, wave
 
     def _load_tensor(self, sample):
-        text = sample['phonemes']
-        speaker_id = sample.get('speaker_id', 0)
+        # text = sample['phonemes']
+        text = sample['phonetic_text']
+        
+        # speaker_id = sample.get('speaker_id', 0)
+        speaker_id = sample.get['gender', 0]
 
         wave = np.array(sample['audio'][0])
         wave = np.concatenate([np.zeros([5000]), wave, np.zeros([5000])], axis=0)
