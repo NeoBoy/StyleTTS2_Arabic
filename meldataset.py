@@ -72,7 +72,13 @@ class FilePathDataset(torch.utils.data.Dataset):
         text = sample['phonetic_text']
         
         # speaker_id = sample.get('speaker_id', 0)
-        speaker_id = sample.get['gender', 0]
+        gender = sample.get('gender', 0)
+        if gender == 'female':
+            speaker_id = 0
+        elif gender == 'male':
+            speaker_id = 1
+        else:
+            speaker_id = 0  # default or unknown
 
         wave = np.array(sample['audio'][0])
         wave = np.concatenate([np.zeros([5000]), wave, np.zeros([5000])], axis=0)
