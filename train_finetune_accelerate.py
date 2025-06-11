@@ -39,6 +39,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+import argparse
 def parse_args():
     parser = argparse.ArgumentParser(description="Train the model")
     parser.add_argument("--config_path", type=str, required=True, help="Path to config file")
