@@ -526,7 +526,7 @@ def main(args = None):
     shutil.copy(config_path, osp.join(log_dir, osp.basename(config_path)))
     
     # Initialize wandb
-    wandb.init(project=args['run_name'], config=config)
+    wandb.init(project=args['run_name'], config=config, mode='offline')
 
     # write logs
     file_handler = logging.FileHandler(osp.join(log_dir, 'train.log'))
