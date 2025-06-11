@@ -19,7 +19,7 @@ data_params:
   train_data: "Data/train_list.txt"
   val_data: "Data/val_list.txt"
   root_path: "wav_data"
-  OOD_data: "Data/youtube_train_list.txt"
+  OOD_data: "Data/train_list.txt"
   min_length: 50 # sample until texts with this size are obtained for OOD texts
 
 preprocess_params:
