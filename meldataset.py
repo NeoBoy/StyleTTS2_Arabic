@@ -162,8 +162,27 @@ class Collater(object):
 
         return waves, texts, bert_texts, input_lengths, mels, output_lengths, ref_mels
 
+def load_filenames_from_txt(txt_path):
+    allowed = set()
+    with open(txt_path, encoding='utf-8') as f:
+        for line in f:
+            if line.strip():
+                allowed.add(line.strip().split('|')[0])
+    return allowed
+
 def build_dataloader(dataset, min_length, batch_size, num_workers, device, validation=False, collate_config={}, dataset_config={}, **kwargs):
-    dataset = FilePathDataset(dataset,  min_length=min_length, validation=validation, **dataset_config)
+    # Get train_data path from config
+    train_data = kwargs.get('train_data')
+    allowed_filenames = load_filenames_from_txt(train_data)
+
+    def is_allowed(example):
+        return example['file'] + '.wav' in allowed_filenames
+
+    # Filter the dataset
+    filtered_dataset = dataset.filter(is_allowed)
+
+    # Now use filtered_dataset for your DataLoader
+    dataset = FilePathDataset(filtered_dataset, min_length=min_length, validation=validation, **dataset_config)
     collate_fn = Collater(**collate_config)
     data_loader = DataLoader(dataset,
                              batch_size=batch_size,
@@ -172,6 +191,5 @@ def build_dataloader(dataset, min_length, batch_size, num_workers, device, valid
                              drop_last=(not validation),
                              collate_fn=collate_fn,
                              pin_memory=(device != 'cpu'))
-
     return data_loader
 
