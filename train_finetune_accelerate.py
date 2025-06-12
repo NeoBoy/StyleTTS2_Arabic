@@ -414,6 +414,10 @@ def validate_model(model, val_dataloader, optimizer, device, n_down, max_len, st
                 texts = texts[:, :MAX_TEXT_LEN]
                 text_mask = text_mask[:, :MAX_TEXT_LEN]
                 input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
+                # Truncate attention matrices to match text length
+                alignment_attn = alignment_attn[:, :MAX_TEXT_LEN, :]
+                alignment_attn_mono = alignment_attn_mono[:, :MAX_TEXT_LEN, :]
+                
             text_encoded = model.text_encoder(texts, input_lengths, text_mask)
             aligned_encoded_text = (text_encoded @ alignment_attn_mono)
 
@@ -659,6 +663,10 @@ def main(args = None):
                 texts = texts[:, :MAX_TEXT_LEN]
                 text_mask = text_mask[:, :MAX_TEXT_LEN]
                 input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
+                # Truncate attention matrices to match text length
+                alignment_attn = alignment_attn[:, :MAX_TEXT_LEN, :]
+                alignment_attn_mono = alignment_attn_mono[:, :MAX_TEXT_LEN, :]
+                
             text_encoded = model.text_encoder(texts, input_lengths, text_mask)
             
             # Randomly choose between regular and monotonic attention for alignment
