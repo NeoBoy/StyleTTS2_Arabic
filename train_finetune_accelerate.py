@@ -409,6 +409,11 @@ def validate_model(model, val_dataloader, optimizer, device, n_down, max_len, st
             alignment_attn_mono = maximum_path(alignment_attn, mask_ST)
 
             # encode
+            MAX_TEXT_LEN = 512
+            if texts.size(1) > MAX_TEXT_LEN:
+                texts = texts[:, :MAX_TEXT_LEN]
+                text_mask = text_mask[:, :MAX_TEXT_LEN]
+                input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
             text_encoded = model.text_encoder(texts, input_lengths, text_mask)
             aligned_encoded_text = (text_encoded @ alignment_attn_mono)
 
@@ -624,6 +629,7 @@ def main(args = None):
         _ = [model[key].train() for key in ['text_aligner', 'text_encoder', 'predictor', 'bert_encoder', 'bert', 'msd', 'mpd']]
 
         for batch_idx, batch in enumerate(train_dataloader):
+            # print(f'Working on batch {batch_idx} of total {len(train_dataloader)}')
             waves, texts, bert_texts, input_lengths, mels, mel_input_length, ref_mels = batch
             _ = [b.to(device) for b in batch[1:]]
 
@@ -648,6 +654,11 @@ def main(args = None):
             loss_algn_mono = F.l1_loss(alignment_attn, alignment_attn_mono) * 10
 
             # encode
+            MAX_TEXT_LEN = 512
+            if texts.size(1) > MAX_TEXT_LEN:
+                texts = texts[:, :MAX_TEXT_LEN]
+                text_mask = text_mask[:, :MAX_TEXT_LEN]
+                input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
             text_encoded = model.text_encoder(texts, input_lengths, text_mask)
             
             # Randomly choose between regular and monotonic attention for alignment
