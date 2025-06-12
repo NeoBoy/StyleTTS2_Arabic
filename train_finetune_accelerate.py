@@ -661,6 +661,11 @@ def main(args = None):
             # Combine features for denoiser ground truth
             target_style = torch.cat([utterance_acoustic_style, utterance_prosodic_style], dim=-1).detach()
 
+            MAX_BERT_LEN = 512
+            if bert_texts.size(1) > MAX_BERT_LEN:
+                bert_texts = bert_texts[:, :MAX_BERT_LEN]
+                text_mask = text_mask[:, :MAX_BERT_LEN]
+            
             bert_embeddings = model.bert(bert_texts, attention_mask=(~text_mask).int())
             bert_encoded = model.bert_encoder(bert_embeddings).transpose(-1, -2) 
 
