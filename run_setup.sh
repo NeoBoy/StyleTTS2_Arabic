@@ -112,12 +112,12 @@ pip install --upgrade --force-reinstall -r requirements.txt
 # ---------------------
 # Execute the Python Script
 # ---------------------
-# echo "Executing hfData2WavFiles.py with the provided arguments..."
-# python hfData2WavFiles.py \
-#   --dataset_name "$DATASET_NAME" \
-#   --splits "$SPLITS" \
-#   --cache_dir "$CACHE_DIR" \
-#   --output_dir "$OUTPUT_DIR" \
-#   --meta_csv "$META_CSV"
+echo "Executing hfData2WavFiles.py with the provided arguments..."
+python hfData2WavFiles.py \
+  --dataset_name "$DATASET_NAME" \
+  --splits "$SPLITS" \
+  --cache_dir "$CACHE_DIR" \
+  --output_dir "$OUTPUT_DIR" \
+  --meta_csv "$META_CSV"
 
 echo "Processing complete."

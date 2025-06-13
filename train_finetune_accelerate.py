@@ -409,14 +409,14 @@ def validate_model(model, val_dataloader, optimizer, device, n_down, max_len, st
             alignment_attn_mono = maximum_path(alignment_attn, mask_ST)
 
             # encode
-            MAX_TEXT_LEN = 512
-            if texts.size(1) > MAX_TEXT_LEN:
-                texts = texts[:, :MAX_TEXT_LEN]
-                text_mask = text_mask[:, :MAX_TEXT_LEN]
-                input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
-                # Truncate attention matrices to match text length
-                alignment_attn = alignment_attn[:, :MAX_TEXT_LEN, :]
-                alignment_attn_mono = alignment_attn_mono[:, :MAX_TEXT_LEN, :]
+            # MAX_TEXT_LEN = 512
+            # if texts.size(1) > MAX_TEXT_LEN:
+            #     texts = texts[:, :MAX_TEXT_LEN]
+            #     text_mask = text_mask[:, :MAX_TEXT_LEN]
+            #     input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
+            #     # Truncate attention matrices to match text length
+            #     alignment_attn = alignment_attn[:, :MAX_TEXT_LEN, :]
+            #     alignment_attn_mono = alignment_attn_mono[:, :MAX_TEXT_LEN, :]
                 
             text_encoded = model.text_encoder(texts, input_lengths, text_mask)
             aligned_encoded_text = (text_encoded @ alignment_attn_mono)
@@ -426,6 +426,11 @@ def validate_model(model, val_dataloader, optimizer, device, n_down, max_len, st
             # Extract style features for validation
             utterance_prosodic_style, _ = extract_style_features(model, mels, mel_input_length)
             
+            # MAX_BERT_LEN = 512
+            # if bert_texts.size(1) > MAX_BERT_LEN:
+            #     bert_texts = bert_texts[:, :MAX_BERT_LEN]
+            #     text_mask = text_mask[:, :MAX_BERT_LEN]
+                
             bert_embeddings = model.bert(bert_texts, attention_mask=(~text_mask).int())
             bert_encoded = model.bert_encoder(bert_embeddings).transpose(-1, -2) 
             duration_pred, predictor_features = model.predictor(bert_encoded, utterance_prosodic_style, input_lengths, alignment_attn_mono, text_mask)
@@ -658,14 +663,14 @@ def main(args = None):
             loss_algn_mono = F.l1_loss(alignment_attn, alignment_attn_mono) * 10
 
             # encode
-            MAX_TEXT_LEN = 512
-            if texts.size(1) > MAX_TEXT_LEN:
-                texts = texts[:, :MAX_TEXT_LEN]
-                text_mask = text_mask[:, :MAX_TEXT_LEN]
-                input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
-                # Truncate attention matrices to match text length
-                alignment_attn = alignment_attn[:, :MAX_TEXT_LEN, :]
-                alignment_attn_mono = alignment_attn_mono[:, :MAX_TEXT_LEN, :]
+            # MAX_TEXT_LEN = 512
+            # if texts.size(1) > MAX_TEXT_LEN:
+            #     texts = texts[:, :MAX_TEXT_LEN]
+            #     text_mask = text_mask[:, :MAX_TEXT_LEN]
+            #     input_lengths = torch.clamp(input_lengths, max=MAX_TEXT_LEN)
+            #     # Truncate attention matrices to match text length
+            #     alignment_attn = alignment_attn[:, :MAX_TEXT_LEN, :]
+            #     alignment_attn_mono = alignment_attn_mono[:, :MAX_TEXT_LEN, :]
                 
             text_encoded = model.text_encoder(texts, input_lengths, text_mask)
             
@@ -680,10 +685,10 @@ def main(args = None):
             # Combine features for denoiser ground truth
             target_style = torch.cat([utterance_acoustic_style, utterance_prosodic_style], dim=-1).detach()
 
-            MAX_BERT_LEN = 512
-            if bert_texts.size(1) > MAX_BERT_LEN:
-                bert_texts = bert_texts[:, :MAX_BERT_LEN]
-                text_mask = text_mask[:, :MAX_BERT_LEN]
+            # MAX_BERT_LEN = 512
+            # if bert_texts.size(1) > MAX_BERT_LEN:
+            #     bert_texts = bert_texts[:, :MAX_BERT_LEN]
+            #     text_mask = text_mask[:, :MAX_BERT_LEN]
             
             bert_embeddings = model.bert(bert_texts, attention_mask=(~text_mask).int())
             bert_encoded = model.bert_encoder(bert_embeddings).transpose(-1, -2) 
