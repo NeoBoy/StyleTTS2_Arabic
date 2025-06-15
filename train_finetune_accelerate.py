@@ -695,7 +695,7 @@ def main(args = None):
             #     # Print which samples are too long
             #     for i in range(bert_texts.size(0)):
             #         if bert_texts[i].size(0) > MAX_BERT_LEN:
-            #             print(f"Sample {i} ({files[i]}) length: {bert_texts[i].size(0)}")
+            #             print(f"Sample {i} ({file_names[i]}) length: {bert_texts[i].size(0)}")
             #     raise RuntimeError("Found sequence longer than 512 tokens in batch.")
             
             # MAX_BERT_LEN = 512
