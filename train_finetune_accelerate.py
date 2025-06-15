@@ -691,7 +691,7 @@ def main(args = None):
             #     print("Batch contains sequence(s) longer than 512 tokens!")
             #     print("Batch shape:", bert_texts.shape)
             #     # Print file names for each sample in the batch
-            #     print("Files in batch:", files)  # 'files' should be a list of file names from your batch
+            #     print("Files in batch:", file_names)  # 'file_names' should be a list of file names from your batch
             #     # Print which samples are too long
             #     for i in range(bert_texts.size(0)):
             #         if bert_texts[i].size(0) > MAX_BERT_LEN:
