@@ -64,8 +64,9 @@ class FilePathDataset(torch.utils.data.Dataset):
         ref_idx = random.randint(0, len(self.dataset) - 1)
         same_speaker_sample = self.dataset[ref_idx]
         ref_mel_tensor, _ = self._load_data(same_speaker_sample)
+        file_name = sample.get('file', f'unknown_{idx}')
         
-        return speaker_id, acoustic_feature, text_tensor, bert_text_tensor, ref_mel_tensor, wave
+        return speaker_id, acoustic_feature, text_tensor, bert_text_tensor, ref_mel_tensor, wave, file_name
 
     def _load_tensor(self, sample):
         # text = sample['phonemes']
@@ -145,8 +146,9 @@ class Collater(object):
         output_lengths = torch.zeros(batch_size).long()
         ref_mels = torch.zeros((batch_size, nmels, self.max_mel_length)).float()
         waves = [None for _ in range(batch_size)]
+        file_names = [None for _ in range(batch_size)]
         
-        for bid, (label, mel, text, bert_text, ref_mel, wave) in enumerate(batch):
+        for bid, (label, mel, text, bert_text, ref_mel, wave, file_name) in enumerate(batch):
             mel_size = mel.size(1)
             text_size = text.size(0)
             labels[bid] = label
@@ -159,8 +161,9 @@ class Collater(object):
             ref_mels[bid, :, :ref_mel_size] = ref_mel
             
             waves[bid] = wave
+            file_names[bid] = file_name
 
-        return waves, texts, bert_texts, input_lengths, mels, output_lengths, ref_mels
+        return waves, texts, bert_texts, input_lengths, mels, output_lengths, ref_mels, file_names
 
 def load_filenames_from_txt(txt_path):
     allowed = set()

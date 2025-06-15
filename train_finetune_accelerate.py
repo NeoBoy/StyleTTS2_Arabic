@@ -394,8 +394,8 @@ def validate_model(model, val_dataloader, optimizer, device, n_down, max_len, st
         for _, batch in enumerate(val_dataloader):
             optimizer.zero_grad()
 
-            waves, texts, bert_texts, input_lengths, mels, mel_input_length, ref_mels = batch
-            _ = [b.to(device) for b in batch[1:]]
+            waves, texts, bert_texts, input_lengths, mels, mel_input_length, ref_mels, file_names = batch
+            _ = [b.to(device) for b in batch[1:-1]]
 
             if mels.size(-1) < 80:
                 continue
@@ -639,8 +639,8 @@ def main(args = None):
 
         for batch_idx, batch in enumerate(train_dataloader):
             # print(f'Working on batch {batch_idx} of total {len(train_dataloader)}')
-            waves, texts, bert_texts, input_lengths, mels, mel_input_length, ref_mels = batch
-            _ = [b.to(device) for b in batch[1:]]
+            waves, texts, bert_texts, input_lengths, mels, mel_input_length, ref_mels, file_names = batch
+            _ = [b.to(device) for b in batch[1:-1]]
 
             if mels.size(-1) < 80:
                 continue
@@ -685,10 +685,24 @@ def main(args = None):
             # Combine features for denoiser ground truth
             target_style = torch.cat([utterance_acoustic_style, utterance_prosodic_style], dim=-1).detach()
 
+            ## Error identification: Check if bert_texts exceeds the maximum length
+            # MAX_BERT_LEN = 512
+            # if bert_texts.size(1) > MAX_BERT_LEN:
+            #     print("Batch contains sequence(s) longer than 512 tokens!")
+            #     print("Batch shape:", bert_texts.shape)
+            #     # Print file names for each sample in the batch
+            #     print("Files in batch:", files)  # 'files' should be a list of file names from your batch
+            #     # Print which samples are too long
+            #     for i in range(bert_texts.size(0)):
+            #         if bert_texts[i].size(0) > MAX_BERT_LEN:
+            #             print(f"Sample {i} ({files[i]}) length: {bert_texts[i].size(0)}")
+            #     raise RuntimeError("Found sequence longer than 512 tokens in batch.")
+            
             # MAX_BERT_LEN = 512
             # if bert_texts.size(1) > MAX_BERT_LEN:
             #     bert_texts = bert_texts[:, :MAX_BERT_LEN]
             #     text_mask = text_mask[:, :MAX_BERT_LEN]
+            
             
             bert_embeddings = model.bert(bert_texts, attention_mask=(~text_mask).int())
             bert_encoded = model.bert_encoder(bert_embeddings).transpose(-1, -2) 
