@@ -1,4 +1,4 @@
-log_dir: "/style_tts2/Models/FineTune.AudioBook"
+log_dir: "./style_tts2/Models/FineTune.AudioBook"
 log_interval: 10
 device: "cuda"
 epochs: 25 # number of finetuning epoch
