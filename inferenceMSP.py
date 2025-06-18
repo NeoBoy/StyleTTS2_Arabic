@@ -43,6 +43,8 @@ def parse_arguments():
     # Adding alpha and beta arguments for controlling style blending
     parser.add_argument('--alpha', type=float, default=0.3, help='Weight for reference style (0.0 to 1.0)')
     parser.add_argument('--beta', type=float, default=0.7, help='Weight for generated style (0.0 to 1.0)')
+    parser.add_argument('--no_diff', action='store_true', default=False,
+                        help='Use reference style without diffusion (for debugging)')
     # Add the ref_speaker_audio argument here
     parser.add_argument('--ref_speaker_audio', type=str, default=None, 
                         help='Path to reference speaker audio file (for style transfer)')
@@ -166,7 +168,7 @@ def compute_style(path, device, model):
     return torch.cat([ref_s, ref_p], dim=1)
 
 def inferenceMSP(model, model_params, phonemes, sampler, device, ref_s=None, diffusion_steps=5, 
-                embedding_scale=1, ref_audio='./ref_audio.wav'):
+                embedding_scale=1, ref_audio='./ref_audio.wav', no_diff=False):
     """Generate speech from phonemized text and speaker style."""
     logger.info("Starting inference process")
     logger.info(f"Parameters: diffusion_steps={diffusion_steps}, embedding_scale={embedding_scale}")
@@ -193,14 +195,25 @@ def inferenceMSP(model, model_params, phonemes, sampler, device, ref_s=None, dif
         
         # Style generation through diffusion
         logger.debug(f"Generating style with {diffusion_steps} diffusion steps")
-        ref_s = compute_style(ref_audio, device, model)
-        s_pred = sampler(
+        if ref_audio is None:
+            logger.debug("No reference audio provided, using random noise for style generation")
+            s_pred = sampler(
             noise=torch.randn((1, 256)).unsqueeze(1).to(device),
             embedding=bert_dur,
             embedding_scale=embedding_scale,
-            features=ref_s,  # reference from the same speaker as the embedding
             num_steps=diffusion_steps
-        ).squeeze(1)
+            ).squeeze(1)
+        elif no_diff:
+            s_pred = compute_style(ref_audio, device, model)
+        else:
+            ref_s = compute_style(ref_audio, device, model)
+            s_pred = sampler(
+                noise=torch.randn((1, 256)).unsqueeze(1).to(device),
+                embedding=bert_dur,
+                embedding_scale=embedding_scale,
+                features=ref_s,  # reference from the same speaker as the embedding
+                num_steps=diffusion_steps
+            ).squeeze(1)
 
         # Split style vector into style and reference components
         style_vector = s_pred[:, 128:]
@@ -315,7 +328,8 @@ def main():
         device, 
         diffusion_steps=args.diffusion_steps, 
         embedding_scale=args.embedding_scale,
-        ref_audio=args.ref_speaker_audio
+        ref_audio=args.ref_speaker_audio,
+        no_diff=args.no_diff
     )
     
     # Calculate real-time factor
