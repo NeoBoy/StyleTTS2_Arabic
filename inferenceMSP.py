@@ -37,7 +37,7 @@ def parse_arguments():
                         help='Arabic text to synthesize')
     parser.add_argument('--output', type=str, default="synthesized_audio.wav", 
                         help='Output audio file path')
-    parser.add_argument('--diffusion_steps', type=int, default=10,
+    parser.add_argument('--diffusion_steps', type=int, default=5,
                         help='Number of diffusion steps')
     parser.add_argument('--embedding_scale', type=float, default=1.0,
                         help='Embedding scale for diffusion')
