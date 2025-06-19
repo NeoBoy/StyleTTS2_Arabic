@@ -168,7 +168,7 @@ def compute_style(path, device, model):
 
     return torch.cat([ref_s, ref_p], dim=1)
 
-def inferenceMSP(model, model_params, phonemes, sampler, device, ref_s=None, diffusion_steps=5, 
+def inferenceMSP(model, model_params, phonemes, sampler, device, diffusion_steps=5, 
                 embedding_scale=1, ref_audio='./ref_audio.wav', no_diff=False):
     """Generate speech from phonemized text and speaker style."""
     logger.info("Starting inference process")
@@ -219,7 +219,7 @@ def inferenceMSP(model, model_params, phonemes, sampler, device, ref_s=None, dif
         # Split style vector into style and reference components
         style_vector = s_pred[:, 128:]
         reference_vector = s_pred[:, :128]
-        
+
         # Duration prediction
         logger.debug("Predicting phoneme durations")
         duration_encoding = model.predictor.text_encoder(d_en, style_vector, input_lengths, text_mask)
