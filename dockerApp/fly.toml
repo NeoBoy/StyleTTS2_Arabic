@@ -1,0 +1,59 @@
+# fly.toml app configuration file generated for arabic-msp-tts on 2025-06-24T12:00:00Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = 'arabic-msp-tts'
+primary_region = 'fra'  # Frankfurt - good for Middle East/Europe
+kill_signal = 'SIGINT'
+kill_timeout = '30s'
+
+[experimental]
+  auto_rollback = true
+
+[build]
+
+[deploy]
+  release_command = 'echo "Deployment starting..."'
+
+[env]
+  PYTHONUNBUFFERED = '1'
+  PYTHONDONTWRITEBYTECODE = '1'
+  PORT = '8000'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+  [http_service.concurrency]
+    type = 'connections'
+    hard_limit = 25
+    soft_limit = 20
+
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '10s'
+    grace_period = '5s'
+    method = 'GET'
+    path = '/health'
+    protocol = 'http'
+    tls_skip_verify = false
+
+    [http_service.checks.headers]
+      Content-Type = 'application/json'
+
+[[vm]]
+  memory = '4gb'
+  cpu_kind = 'shared'
+  cpus = 2
+
+[[mounts]]
+  source = 'arabic_tts_models'
+  destination = '/app/models'
+  initial_size = '10gb'
+
+[restart]
+  policy = 'on-failure'
