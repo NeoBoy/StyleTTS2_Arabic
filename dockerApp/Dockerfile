@@ -1,6 +1,7 @@
 # Universal Dockerfile for Arabic MSP-TTS API
 # Compatible with: Docker, Fly.io, Railway, Render, Google Cloud Run, AWS ECS, Azure Container Instances
-FROM python:3.10-slim
+# Use PyTorch 2.4.1 with GPU support and CUDA 11.8
+FROM pytorch/pytorch:2.4.1-cuda11.8-cudnn9-runtime
 
 # Set working directory
 WORKDIR /app
@@ -33,10 +34,6 @@ ENV PORT=8000
 RUN git clone https://github.com/NeoBoy/StyleTTS2_Arabic.git /tmp/styletts2 && \
     cp -r /tmp/styletts2/* . && \
     rm -rf /tmp/styletts2
-
-# Install PyTorch - CPU version for broader compatibility
-RUN pip install torch==2.0.1+cpu torchvision==0.15.2+cpu torchaudio==2.0.2+cpu \
-    --index-url https://download.pytorch.org/whl/cpu
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
@@ -96,24 +93,61 @@ RUN cd models && \
         echo "⚠ model24.pth may be incomplete"; \
     fi
 
-# Copy application files
-COPY main.py .
-COPY inferenceMSP.py .
+# Download main.py from the repository (dockerApp directory)
+RUN echo "Downloading main.py..." && \
+    for i in 1 2 3; do \
+        wget --timeout=60 --tries=2 \
+            -O main.py \
+            "https://raw.githubusercontent.com/NeoBoy/StyleTTS2_Arabic/main/dockerApp/main.py" && \
+        echo "main.py downloaded successfully" && break || \
+        (echo "Attempt $i failed, waiting 5s before retry..." && sleep 5); \
+    done
 
-# Handle reference audio files flexibly
-COPY ref_audio*.wav . 2>/dev/null || echo "Reference audio files not found in build context"
+# Download inferenceMSP.py from the repository
+RUN echo "Downloading inferenceMSP.py..." && \
+    for i in 1 2 3; do \
+        wget --timeout=60 --tries=2 \
+            -O inferenceMSP.py \
+            "https://raw.githubusercontent.com/NeoBoy/StyleTTS2_Arabic/main/inferenceMSP.py" && \
+        echo "inferenceMSP.py downloaded successfully" && break || \
+        (echo "Attempt $i failed, waiting 5s before retry..." && sleep 5); \
+    done
 
-# Create fallback reference audio files if needed
-RUN if [ ! -f "ref_audioM.wav" ]; then \
+# Download reference audio files from the repository
+RUN echo "Downloading reference audio files..." && \
+    for i in 1 2 3; do \
+        echo "Downloading ref_audioM.wav (attempt $i/3)..." && \
+        wget --timeout=60 --tries=2 \
+            -O ref_audioM.wav \
+            "https://github.com/NeoBoy/StyleTTS2_Arabic/raw/main/ref_audioM.wav" && \
+        echo "ref_audioM.wav downloaded successfully" && break || \
+        (echo "Attempt $i failed, waiting 5s before retry..." && sleep 5); \
+    done && \
+    for i in 1 2 3; do \
+        echo "Downloading ref_audioF.wav (attempt $i/3)..." && \
+        wget --timeout=60 --tries=2 \
+            -O ref_audioF.wav \
+            "https://github.com/NeoBoy/StyleTTS2_Arabic/raw/main/ref_audioF.wav" && \
+        echo "ref_audioF.wav downloaded successfully" && break || \
+        (echo "Attempt $i failed, waiting 5s before retry..." && sleep 5); \
+    done
+
+# Create fallback reference audio files if downloads failed
+RUN if [ ! -f "ref_audioM.wav" ] || [ $(stat -f%z "ref_audioM.wav" 2>/dev/null || stat -c%s "ref_audioM.wav") -lt 1000 ]; then \
         echo "Creating placeholder male reference audio..." && \
         sox -n -r 24000 -c 1 -b 16 ref_audioM.wav trim 0.0 2.0 synth sine 440; \
     fi && \
-    if [ ! -f "ref_audioF.wav" ]; then \
+    if [ ! -f "ref_audioF.wav" ] || [ $(stat -f%z "ref_audioF.wav" 2>/dev/null || stat -c%s "ref_audioF.wav") -lt 1000 ]; then \
         echo "Creating placeholder female reference audio..." && \
         sox -n -r 24000 -c 1 -b 16 ref_audioF.wav trim 0.0 2.0 synth sine 880; \
     fi && \
     echo "Reference audio files ready:" && \
     ls -la ref_audio*.wav
+
+# Verify all critical files are present
+RUN echo "Verifying all required files..." && \
+    ls -la main.py inferenceMSP.py ref_audio*.wav && \
+    echo "File verification complete"
 
 # Create non-root user for security (platform-agnostic)
 RUN groupadd --gid 1001 appgroup && \
