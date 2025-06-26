@@ -279,6 +279,105 @@ def inferenceMSP(model, model_params, phonemes, sampler, device, diffusion_steps
     # Remove artifacts at the end of the audio
     return audio_output.squeeze().cpu().numpy()[..., :-50]
 
+def inferenceMSP_fastapi(model, model_params, phonemes, sampler, device, diffusion_steps=5, 
+                embedding_scale=1, ref_audio='./ref_audio.wav', no_diff=False):
+    """Generate speech from phonemized text and speaker style."""
+    
+    # Tokenize input phonemes
+    tokens = VanillaCharacterIndexer()(phonemes)
+    bert_tokens = BertCharacterIndexer()(phonemes)
+    tokens.insert(0, 0)
+    bert_tokens.insert(0, 0)
+    tokens = torch.LongTensor(tokens).to(device).unsqueeze(0)
+    bert_tokens = torch.LongTensor(bert_tokens).to(device).unsqueeze(0)
+    
+    with torch.no_grad():
+        # Prepare input lengths and mask
+        input_lengths = torch.LongTensor([tokens.shape[-1]]).to(device)
+        text_mask = length_to_mask(input_lengths).to(device)
+        
+        # Text and BERT encoding
+        t_en = model.text_encoder(tokens, input_lengths, text_mask)
+        bert_dur = model.bert(bert_tokens, attention_mask=(~text_mask).int())
+        d_en = model.bert_encoder(bert_dur).transpose(-1, -2)
+        
+        # Style generation through diffusion
+        if ref_audio is None:
+            s_pred = sampler(
+            noise=torch.randn((1, 256)).unsqueeze(1).to(device),
+            embedding=bert_dur,
+            embedding_scale=embedding_scale,
+            num_steps=diffusion_steps
+            ).squeeze(1)
+        elif no_diff:
+            s_pred = compute_style(ref_audio, device, model)
+        else:
+            ref_s = compute_style(ref_audio, device, model)
+            s_pred = sampler(
+                noise=torch.randn((1, 256)).unsqueeze(1).to(device),
+                embedding=bert_dur,
+                embedding_scale=embedding_scale,
+                features=ref_s,  # reference from the same speaker as the embedding
+                num_steps=diffusion_steps
+            ).squeeze(1)
+
+        # Split style vector into style and reference components
+        style_vector = s_pred[:, 128:]
+        reference_vector = s_pred[:, :128]
+
+        # Duration prediction
+        duration_encoding = model.predictor.text_encoder(d_en, style_vector, input_lengths, text_mask)
+        lstm_output, _ = model.predictor.lstm(duration_encoding)
+        duration_logits = model.predictor.duration_proj(lstm_output)
+        
+        # Process durations
+        duration_probs = torch.sigmoid(duration_logits).sum(axis=-1)
+        predicted_durations = torch.round(duration_probs.squeeze()).clamp(min=1)
+        
+        # Create alignment target
+        alignment_target = torch.zeros(input_lengths, int(predicted_durations.sum().data))
+        current_frame = 0
+        for i in range(alignment_target.size(0)):
+            dur_i = int(predicted_durations[i].data)
+            alignment_target[i, current_frame:current_frame + dur_i] = 1
+            current_frame += dur_i
+        
+        # Encode prosody
+        prosody_encoding = (duration_encoding.transpose(-1, -2) @ alignment_target.unsqueeze(0).to(device))
+        
+        # Handle HifiGAN decoder specifics
+        if model_params.decoder.type == "hifigan":
+            shifted_encoding = torch.zeros_like(prosody_encoding)
+            shifted_encoding[:, :, 0] = prosody_encoding[:, :, 0]
+            shifted_encoding[:, :, 1:] = prosody_encoding[:, :, 0:-1]
+            prosody_encoding = shifted_encoding
+        
+        # Predict F0 and noise
+        f0_prediction, noise_prediction = model.predictor.F0Ntrain(prosody_encoding, style_vector)
+        
+        # Prepare ASR features
+        asr_features = (t_en @ alignment_target.unsqueeze(0).to(device))
+        
+        # Handle HifiGAN decoder specifics for ASR features
+        if model_params.decoder.type == "hifigan":
+            shifted_asr = torch.zeros_like(asr_features)
+            shifted_asr[:, :, 0] = asr_features[:, :, 0]
+            shifted_asr[:, :, 1:] = asr_features[:, :, 0:-1]
+            asr_features = shifted_asr
+        
+        # Generate audio
+        audio_output = model.decoder(
+            asr_features,
+            f0_prediction, 
+            noise_prediction, 
+            reference_vector.squeeze().unsqueeze(0)
+        )
+    
+    # Remove artifacts at the end of the audio
+    return audio_output.squeeze().cpu().numpy()[..., :-50]
+
+
+
 def main():
     """Main function for StyleTTS2 inference."""
     # Parse arguments and set up environment
