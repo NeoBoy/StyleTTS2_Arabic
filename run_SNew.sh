@@ -1,4 +1,5 @@
 #!/bin/bash
+# filepath: /mnt/d/SAB_Work/RehanWork/Project02_ArabicTTS/run_SNew.sh
 
 set -euo pipefail
 
@@ -36,7 +37,6 @@ fi
 if ! command -v poetry >/dev/null 2>&1; then
   echo "Installing poetry..."
   curl -sSL https://install.python-poetry.org | python3 -
-  # Ensure Poetry is on PATH for this script
   export PATH="$HOME/.local/bin:$PATH"
 else
   echo "poetry already installed."
@@ -82,23 +82,42 @@ pyenv local "$PYTHON_VERSION"
 eval "$(pyenv init -)"
 
 # ---------------------
-# Ensure pyproject.toml exists, then import requirements.txt into Poetry
+# Remove existing pyproject.toml and Poetry env to start fresh
 # ---------------------
-if [ ! -f pyproject.toml ]; then
-  echo "No pyproject.toml found. Initializing a minimal Poetry project..."
-  poetry init -n --name "styletss2-arabic"
-  # Add a Python constraint compatible with torch/triton
-  sed -i '/\[tool.poetry.dependencies\]/a python = ">=3.10,<3.15"' pyproject.toml
-fi
+echo "Cleaning up any existing Poetry configuration..."
+rm -f pyproject.toml poetry.lock
+poetry env remove --all 2>/dev/null || true
+
+# ---------------------
+# Create pyproject.toml with correct Python constraint
+# ---------------------
+echo "Creating pyproject.toml with Python constraint >=3.12,<3.15..."
+cat > pyproject.toml <<EOF
+[tool.poetry]
+name = "styletts2-arabic"
+version = "0.1.0"
+description = "Arabic TTS using StyleTTS2"
+authors = ["Your Name <you@example.com>"]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<3.15"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+EOF
 
 # Use the pyenv Python in Poetry
 poetry env use "$PYTHON_VERSION"
 
-# If requirements.txt exists, import it into Poetry (excluding 'typing' backport)
+# ---------------------
+# Import dependencies from requirements.txt (excluding 'typing')
+# ---------------------
 if [ -f requirements.txt ]; then
   echo "Importing requirements.txt into Poetry (skipping 'typing')..."
   DEPS=$(grep -v '^\s*#' requirements.txt | grep -vi '^typing' | tr '\n' ' ')
   if [ -n "$DEPS" ]; then
+    echo "Adding dependencies to Poetry..."
     poetry add $DEPS
   fi
 fi
