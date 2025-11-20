@@ -1,16 +1,7 @@
 #!/bin/bash
-# This script installs pyenv and poetry, then:
-# - clones the repository
-# - creates a pyenv-based Python for the project
-# - installs dependencies with poetry
-# - downloads both splits of the Arabic TTS dataset from Hugging Face
-#   into /cache and saves audio files + metadata.
+# filepath: /mnt/d/SAB_Work/RehanWork/Project02_ArabicTTS/run_SNew.sh
+set -euo pipefail
 
-set -euo pipefail   # Exit on error, unset vars, or failed pipes
-
-# ---------------------
-# System Update & Package Installation
-# ---------------------
 echo "Updating system and installing required packages..."
 sudo apt-get update
 sudo apt-get install -y \
@@ -26,7 +17,6 @@ if ! command -v pyenv >/dev/null 2>&1; then
   echo "Installing pyenv..."
   curl https://pyenv.run | bash
 
-  # Add pyenv init to shell startup
   if ! grep -q 'pyenv init' "$HOME/.bashrc"; then
     cat >> "$HOME/.bashrc" <<'EOF'
 
@@ -37,7 +27,6 @@ eval "$(pyenv virtualenv-init -)"
 EOF
   fi
 
-  # Initialize pyenv for current shell
   export PATH="$HOME/.pyenv/bin:$PATH"
   eval "$(pyenv init -)"
   eval "$(pyenv virtualenv-init -)"
@@ -54,8 +43,7 @@ fi
 if ! command -v poetry >/dev/null 2>&1; then
   echo "Installing poetry..."
   curl -sSL https://install.python-poetry.org | python3 -
-  # Add poetry to PATH
-  if ! grep -q 'poetry/bin' "$HOME/.bashrc"; then
+  if ! grep -q '.local/bin' "$HOME/.bashrc"; then
     echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
   fi
   export PATH="$HOME/.local/bin:$PATH"
@@ -70,16 +58,12 @@ fi
 REPO_URL="https://github.com/MachineLearning-IIUI/StyleTTS2_Arabic.git"
 REPO_DIR="StyleTTS2_Arabic"
 
-# Parameters for the Python script (which is inside the repo)
-DATASET_NAME="NeoBoy/arabic-tts-wav-24k"  # Dataset identifier on Hugging Face
-SPLITS="train,test"                      # Comma-separated list of dataset splits
-CACHE_DIR="cache"                        # Directory used for caching dataset files
-OUTPUT_DIR="wav_data"                    # Directory where audio files will be saved
-META_CSV="dataset_metadata.csv"          # CSV file to store metadata
+DATASET_NAME="NeoBoy/arabic-tts-wav-24k"
+SPLITS="train,test"
+CACHE_DIR="cache"
+OUTPUT_DIR="wav_data"
+META_CSV="dataset_metadata.csv"
 
-# ---------------------
-# Clone or Force Reset Repository
-# ---------------------
 if [ ! -d "$REPO_DIR" ]; then
   echo "Cloning repository from $REPO_URL..."
   git clone "$REPO_URL"
@@ -95,7 +79,6 @@ fi
 # ---------------------
 # Python Version via pyenv
 # ---------------------
-# Choose a Python version that your project supports
 PYTHON_VERSION="3.12.9"
 
 if ! pyenv versions --bare | grep -qx "$PYTHON_VERSION"; then
@@ -105,17 +88,28 @@ fi
 
 echo "Setting local Python version to $PYTHON_VERSION..."
 pyenv local "$PYTHON_VERSION"
-
-# Ensure the new Python is active in this shell
 eval "$(pyenv init -)"
 
 # ---------------------
-# Poetry Environment & Dependencies
+# Ensure pyproject.toml exists, then import requirements.txt into Poetry
 # ---------------------
-# If you have a pyproject.toml in the repo, this will create/activate
-# a virtualenv managed by Poetry and install dependencies.
-echo "Installing dependencies with poetry..."
+if [ ! -f pyproject.toml ]; then
+  echo "No pyproject.toml found. Initializing a minimal Poetry project..."
+  # -n: non-interactive, accepts defaults
+  poetry init -n --name "styletss2-arabic" --dependency "pip>=23.0"
+fi
+
+# Use the pyenv Python in Poetry
 poetry env use "$PYTHON_VERSION"
+
+# If requirements.txt exists, import it into Poetry
+if [ -f requirements.txt ]; then
+  echo "Importing requirements.txt into Poetry..."
+  # This will add the requirements as dependencies in pyproject.toml
+  poetry add $(grep -v '^\s*#' requirements.txt | tr '\n' ' ')
+fi
+
+echo "Installing dependencies with poetry..."
 poetry install --no-interaction --no-root
 
 # ---------------------
