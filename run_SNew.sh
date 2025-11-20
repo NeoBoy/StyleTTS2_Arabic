@@ -68,9 +68,9 @@ else
 fi
 
 # ---------------------
-# Python Version via pyenv (use 3.10 for dependency compatibility)
+# Python Version via pyenv
 # ---------------------
-PYTHON_VERSION="3.10.14"
+PYTHON_VERSION="3.12.9"
 
 if ! pyenv versions --bare | grep -qx "$PYTHON_VERSION"; then
   echo "Installing Python $PYTHON_VERSION via pyenv..."
@@ -87,8 +87,8 @@ eval "$(pyenv init -)"
 if [ ! -f pyproject.toml ]; then
   echo "No pyproject.toml found. Initializing a minimal Poetry project..."
   poetry init -n --name "styletss2-arabic"
-  # Optionally constrain Python version in pyproject later by hand:
-  #   python = "3.10.*"
+  # Add a Python constraint compatible with torch/triton
+  sed -i '/\[tool.poetry.dependencies\]/a python = ">=3.10,<3.15"' pyproject.toml
 fi
 
 # Use the pyenv Python in Poetry
