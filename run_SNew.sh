@@ -1,5 +1,5 @@
 #!/bin/bash
-# filepath: /mnt/d/SAB_Work/RehanWork/Project02_ArabicTTS/run_SNew.sh
+
 set -euo pipefail
 
 echo "Updating system and installing required packages..."
@@ -11,30 +11,23 @@ sudo apt-get install -y \
   libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
 # ---------------------
-# Install pyenv (if not installed)
+# Ensure pyenv is available (but do NOT reinstall if /root/.pyenv exists)
 # ---------------------
-if ! command -v pyenv >/dev/null 2>&1; then
+if [ ! -d "$HOME/.pyenv" ] && ! command -v pyenv >/dev/null 2>&1; then
   echo "Installing pyenv..."
   curl https://pyenv.run | bash
-
-  if ! grep -q 'pyenv init' "$HOME/.bashrc"; then
-    cat >> "$HOME/.bashrc" <<'EOF'
-
-# pyenv initialization
-export PATH="$HOME/.pyenv/bin:$PATH"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-EOF
-  fi
-
-  export PATH="$HOME/.pyenv/bin:$PATH"
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
 else
-  echo "pyenv already installed."
-  export PATH="$HOME/.pyenv/bin:$PATH"
+  echo "pyenv already present at $HOME/.pyenv or on PATH."
+fi
+
+# Initialize pyenv for this script
+export PATH="$HOME/.pyenv/bin:$PATH"
+if command -v pyenv >/dev/null 2>&1; then
   eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)"
+  eval "$(pyenv virtualenv-init -)" 2>/dev/null || true
+else
+  echo "ERROR: pyenv not found on PATH even after install. Aborting."
+  exit 1
 fi
 
 # ---------------------
@@ -43,9 +36,7 @@ fi
 if ! command -v poetry >/dev/null 2>&1; then
   echo "Installing poetry..."
   curl -sSL https://install.python-poetry.org | python3 -
-  if ! grep -q '.local/bin' "$HOME/.bashrc"; then
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-  fi
+  # Ensure Poetry is on PATH for this script
   export PATH="$HOME/.local/bin:$PATH"
 else
   echo "poetry already installed."
@@ -77,7 +68,7 @@ else
 fi
 
 # ---------------------
-# Python Version via pyenv
+# Python Version via pyenv (use 3.10 for dependency compatibility)
 # ---------------------
 PYTHON_VERSION="3.10.14"
 
@@ -95,18 +86,21 @@ eval "$(pyenv init -)"
 # ---------------------
 if [ ! -f pyproject.toml ]; then
   echo "No pyproject.toml found. Initializing a minimal Poetry project..."
-  # -n: non-interactive, accepts defaults
-  poetry init -n --name "styletss2-arabic" --dependency "pip>=23.0"
+  poetry init -n --name "styletss2-arabic"
+  # Optionally constrain Python version in pyproject later by hand:
+  #   python = "3.10.*"
 fi
 
 # Use the pyenv Python in Poetry
 poetry env use "$PYTHON_VERSION"
 
-# If requirements.txt exists, import it into Poetry
+# If requirements.txt exists, import it into Poetry (excluding 'typing' backport)
 if [ -f requirements.txt ]; then
-  echo "Importing requirements.txt into Poetry..."
-  # This will add the requirements as dependencies in pyproject.toml
-  poetry add $(grep -v '^\s*#' requirements.txt | tr '\n' ' ')
+  echo "Importing requirements.txt into Poetry (skipping 'typing')..."
+  DEPS=$(grep -v '^\s*#' requirements.txt | grep -vi '^typing' | tr '\n' ' ')
+  if [ -n "$DEPS" ]; then
+    poetry add $DEPS
+  fi
 fi
 
 echo "Installing dependencies with poetry..."
