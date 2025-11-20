@@ -79,7 +79,7 @@ fi
 # ---------------------
 # Python Version via pyenv
 # ---------------------
-PYTHON_VERSION="3.12.9"
+PYTHON_VERSION="3.10.14"
 
 if ! pyenv versions --bare | grep -qx "$PYTHON_VERSION"; then
   echo "Installing Python $PYTHON_VERSION via pyenv..."
