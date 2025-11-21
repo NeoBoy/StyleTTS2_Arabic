@@ -1,5 +1,4 @@
 #!/bin/bash
-# filepath: /mnt/d/SAB_Work/RehanWork/Project02_ArabicTTS/run_SNew.sh
 
 set -euo pipefail
 
@@ -111,16 +110,28 @@ EOF
 poetry env use "$PYTHON_VERSION"
 
 # ---------------------
-# Import dependencies from requirements.txt (excluding 'typing')
+# Import dependencies from requirements.txt (excluding 'typing' and PyTorch libs)
 # ---------------------
 if [ -f requirements.txt ]; then
-  echo "Importing requirements.txt into Poetry (skipping 'typing')..."
-  DEPS=$(grep -v '^\s*#' requirements.txt | grep -vi '^typing' | tr '\n' ' ')
+  echo "Importing requirements.txt into Poetry (skipping 'typing' and PyTorch libs)..."
+  # Skip typing, torch, torchaudio, torchvision - we'll add them separately with specific versions
+  DEPS=$(grep -v '^\s*#' requirements.txt | \
+         grep -vi '^typing' | \
+         grep -vi '^torch' | \
+         grep -vi '^torchaudio' | \
+         grep -vi '^torchvision' | \
+         tr '\n' ' ')
   if [ -n "$DEPS" ]; then
-    echo "Adding dependencies to Poetry..."
+    echo "Adding non-PyTorch dependencies to Poetry..."
     poetry add $DEPS
   fi
 fi
+
+# ---------------------
+# Add PyTorch libraries with specific version 2.7.0
+# ---------------------
+echo "Adding PyTorch libraries with version 2.7.0..."
+poetry add torch==2.7.0 torchaudio==2.7.0
 
 echo "Installing dependencies with poetry..."
 poetry install --no-interaction --no-root
