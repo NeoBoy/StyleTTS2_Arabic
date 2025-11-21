@@ -110,28 +110,35 @@ EOF
 poetry env use "$PYTHON_VERSION"
 
 # ---------------------
-# Import dependencies from requirements.txt (excluding 'typing' and PyTorch libs)
+# Add PyTorch libraries FIRST with specific version 2.7.0
+# ---------------------
+echo "Adding PyTorch libraries with version 2.7.0..."
+poetry add torch==2.7.0 torchaudio==2.7.0
+
+# ---------------------
+# Add datasets library with version 3.6.0
+# ---------------------
+echo "Adding datasets library with version 3.6.0..."
+poetry add datasets==3.6.0
+
+# ---------------------
+# Import dependencies from requirements.txt (excluding 'typing', PyTorch libs, and datasets)
 # ---------------------
 if [ -f requirements.txt ]; then
-  echo "Importing requirements.txt into Poetry (skipping 'typing' and PyTorch libs)..."
-  # Skip typing, torch, torchaudio, torchvision - we'll add them separately with specific versions
+  echo "Importing requirements.txt into Poetry (skipping 'typing', PyTorch libs, and datasets)..."
+  # Skip typing, torch, torchaudio, torchvision, datasets - we'll add them separately with specific versions
   DEPS=$(grep -v '^\s*#' requirements.txt | \
          grep -vi '^typing' | \
          grep -vi '^torch' | \
          grep -vi '^torchaudio' | \
          grep -vi '^torchvision' | \
+         grep -vi '^datasets' | \
          tr '\n' ' ')
   if [ -n "$DEPS" ]; then
     echo "Adding non-PyTorch dependencies to Poetry..."
     poetry add $DEPS
   fi
 fi
-
-# ---------------------
-# Add PyTorch libraries with specific version 2.7.0 + torchcodec
-# ---------------------
-echo "Adding PyTorch libraries with version 2.7.0 and torchcodec..."
-poetry add torch==2.7.0 torchaudio==2.7.0 torchcodec
 
 echo "Installing dependencies with poetry..."
 poetry install --no-interaction --no-root
