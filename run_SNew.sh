@@ -128,10 +128,10 @@ if [ -f requirements.txt ]; then
 fi
 
 # ---------------------
-# Add PyTorch libraries with specific version 2.7.0
+# Add PyTorch libraries with specific version 2.7.0 + torchcodec
 # ---------------------
-echo "Adding PyTorch libraries with version 2.7.0..."
-poetry add torch==2.7.0 torchaudio==2.7.0
+echo "Adding PyTorch libraries with version 2.7.0 and torchcodec..."
+poetry add torch==2.7.0 torchaudio==2.7.0 torchcodec
 
 echo "Installing dependencies with poetry..."
 poetry install --no-interaction --no-root
