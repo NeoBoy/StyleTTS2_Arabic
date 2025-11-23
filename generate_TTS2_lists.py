@@ -107,6 +107,7 @@ def main():
     parser.add_argument("--text_field", type=str, default="phonetic_text", help="Column in metadata containing phonetic text.")
     parser.add_argument("--target_duration", type=float, default=None, help="Target duration **per gender** in seconds.")
     parser.add_argument("--duration_order", type=str, default="random", choices=["random", "min", "max"], help="Ordering method: 'random' (default), 'min' (ascending), 'max' (descending).")
+    parser.add_argument("--max_duration", type=float, default=None, help="Skip files with duration greater than this value (in seconds).")
     args = parser.parse_args()
 
     if not os.path.exists(args.metadata_csv):
@@ -115,12 +116,21 @@ def main():
 
     df = pd.read_csv(args.metadata_csv)
 
+    # import pdb; pdb.set_trace()
+
     # Validate required columns exist
     for col in ["file_name", "split", args.text_field, "gender", "duration"]:
         if col not in df.columns:
             print(f"Error: Required column '{col}' not found in metadata.")
             exit(1)
 
+    # Filter out files with duration greater than max_duration
+    if args.max_duration is not None:
+        original_count = len(df)
+        df = df[df["duration"] <= args.max_duration]
+        filtered_count = original_count - len(df)
+        print(f"Filtered out {filtered_count} files with duration > {args.max_duration} sec.")
+    
     df_train = df[df["split"] == args.train_split]
     df_val = df[df["split"] == args.val_split]
 

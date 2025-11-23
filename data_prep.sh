@@ -1,9 +1,10 @@
 #!/bin/bash
 set -euo pipefail   # Exit on error, unset vars, or failed pipes
 
-# Ensure conda is initialized in this shell (in case running data_prep.sh separately)
-if [ -z "${CONDA_PREFIX:-}" ]; then
-    source "$HOME/anaconda3/etc/profile.d/conda.sh"
+# Ensure we're using Poetry environment
+if ! command -v poetry >/dev/null 2>&1; then
+    echo "ERROR: poetry not found. Please install poetry first."
+    exit 1
 fi
 
 # Define key variables
@@ -21,18 +22,9 @@ VAL_LIST="Data/val_list.txt"
 TEXT_FIELD="phonetic_text"
 
 # OPTIONAL: Duration-based filtering for the training set
-# For TARGET_DURATION, the default value is set to "3600", which represents a target total duration of 3600 
-# seconds (or 1 hour) for each gender in the dataset. This means that, unless the variable is set elsewhere, 
-# the script will aim to select audio samples totaling 1 hour for both male and female data. 
-# If TARGET_DURATION is left empty, the script will use the entire dataset without limiting the duration.
-#
-# For DURATION_ORDER, the default is "random". This variable controls the method used to order or select audio 
-# samples when assembling the dataset. The value can be "random" (select samples in a random order), 
-# "min" (prioritize shorter samples first), or "max" (prioritize longer samples first). 
-# This allows for flexible control over how the dataset is constructed, depending on the desired characteristics 
-# for training or evaluation.
-TARGET_DURATION=${TARGET_DURATION:-"3600"}  # 3600 means 1 hr each for both genders, If empty, full dataset will be used
+TARGET_DURATION=${TARGET_DURATION:-""}  # 3600 means 1 hr each for both genders, If empty, full dataset will be used
 DURATION_ORDER=${DURATION_ORDER:-"random"}  # Default ordering method, can be "random", "min", or "max"
+MAX_DURATION=${MAX_DURATION:-"10"}  # If set, skip files with duration greater than this value (in seconds)
 
 # Prepare arguments for generate_TTS2_lists.py
 args=( --metadata_csv "$META_CSV"
@@ -49,9 +41,14 @@ if [ -n "$TARGET_DURATION" ]; then
 else
     echo "No target duration provided—using the full dataset. Default sorting order: $DURATION_ORDER."
 fi
+# Add max duration filter if set
+if [ -n "$MAX_DURATION" ]; then
+    echo "Skipping files with duration > $MAX_DURATION sec."
+    args+=( --max_duration "$MAX_DURATION" )
+fi
 
 echo "Generating list files for StyleTTS2..."
-python generate_TTS2_lists.py "${args[@]}"
+poetry run python generate_TTS2_lists.py "${args[@]}"
 
 echo "List files generated:"
 echo "  Train list: $TRAIN_LIST"
