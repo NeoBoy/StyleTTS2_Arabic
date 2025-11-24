@@ -21,9 +21,9 @@ if ! command -v huggingface-cli &> /dev/null; then
 fi
 
 # Create the repo if it doesn't exist
-huggingface-cli repo create "$REPO_ID" --type=model --token "$HF_TOKEN" --yes
+poetry run huggingface-cli repo create "$REPO_ID" --type=model --token "$HF_TOKEN" --yes
 
 # Upload the file using the CLI
-huggingface-cli upload "$REPO_ID" "$LATEST_PTH" --token "$HF_TOKEN" --repo-type model
+poetry run huggingface-cli upload "$REPO_ID" "$LATEST_PTH" --token "$HF_TOKEN" --repo-type model
 
 echo "Upload complete."
