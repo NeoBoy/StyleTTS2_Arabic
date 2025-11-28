@@ -13,12 +13,20 @@ sudo apt-get install -y \
 # ---------------------
 # Ensure pyenv is available (but do NOT reinstall if /root/.pyenv exists)
 # ---------------------
+# Export pyenv to PATH FIRST
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+
 if [ ! -d "$HOME/.pyenv" ] && ! command -v pyenv >/dev/null 2>&1; then
   echo "Installing pyenv..."
   curl https://pyenv.run | bash
 else
   echo "pyenv already present at $HOME/.pyenv or on PATH."
 fi
+
+# Initialize pyenv for this script
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)" 2>/dev/null || true
 
 # Add pyenv to shell profile for persistence
 SHELL_RC="$HOME/.bashrc"
@@ -38,12 +46,8 @@ eval "$(pyenv virtualenv-init -)"
 PYENV_EOF
 fi
 
-# Initialize pyenv for this script
-export PATH="$HOME/.pyenv/bin:$PATH"
-if command -v pyenv >/dev/null 2>&1; then
-  eval "$(pyenv init -)"
-  eval "$(pyenv virtualenv-init -)" 2>/dev/null || true
-else
+# Verify pyenv is available
+if ! command -v pyenv >/dev/null 2>&1; then
   echo "ERROR: pyenv not found on PATH even after install. Aborting."
   exit 1
 fi
@@ -51,19 +55,26 @@ fi
 # ---------------------
 # Install Poetry (if not installed)
 # ---------------------
+# Export poetry to PATH FIRST
+export PATH="$HOME/.local/bin:$PATH"
+
 if ! command -v poetry >/dev/null 2>&1; then
   echo "Installing poetry..."
   curl -sSL https://install.python-poetry.org | python3 -
-  export PATH="$HOME/.local/bin:$PATH"
 else
   echo "poetry already installed."
-  export PATH="$HOME/.local/bin:$PATH"
 fi
 
 # Add poetry to shell profile for persistence
 if ! grep -q '.local/bin' "$SHELL_RC" 2>/dev/null; then
   echo "Adding poetry to $SHELL_RC..."
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_RC"
+fi
+
+# Verify poetry is available
+if ! command -v poetry >/dev/null 2>&1; then
+  echo "ERROR: poetry not found on PATH even after install. Aborting."
+  exit 1
 fi
 
 
@@ -73,7 +84,7 @@ fi
 REPO_URL="https://github.com/MachineLearning-IIUI/StyleTTS2_Arabic.git"
 REPO_DIR="StyleTTS2_Arabic"
 
-DATASET_NAME="NeoBoy/arabic-tts-wav-24k"
+DATASET_NAME="blits-ai/arabic-tts-wav-24k"
 SPLITS="train,test"
 CACHE_DIR="cache"
 OUTPUT_DIR="wav_data"
