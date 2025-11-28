@@ -20,6 +20,24 @@ else
   echo "pyenv already present at $HOME/.pyenv or on PATH."
 fi
 
+# Add pyenv to shell profile for persistence
+SHELL_RC="$HOME/.bashrc"
+if [ -n "${ZSH_VERSION:-}" ]; then
+  SHELL_RC="$HOME/.zshrc"
+fi
+
+if ! grep -q 'pyenv init' "$SHELL_RC" 2>/dev/null; then
+  echo "Adding pyenv to $SHELL_RC..."
+  cat >> "$SHELL_RC" <<'PYENV_EOF'
+
+# pyenv configuration
+export PYENV_ROOT="$HOME/.pyenv"
+export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+PYENV_EOF
+fi
+
 # Initialize pyenv for this script
 export PATH="$HOME/.pyenv/bin:$PATH"
 if command -v pyenv >/dev/null 2>&1; then
@@ -41,6 +59,13 @@ else
   echo "poetry already installed."
   export PATH="$HOME/.local/bin:$PATH"
 fi
+
+# Add poetry to shell profile for persistence
+if ! grep -q '.local/bin' "$SHELL_RC" 2>/dev/null; then
+  echo "Adding poetry to $SHELL_RC..."
+  echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$SHELL_RC"
+fi
+
 
 # ---------------------
 # Repository & Project Setup
